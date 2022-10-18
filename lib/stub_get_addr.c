@@ -41,7 +41,7 @@ mirage_iopage_get_addr(value page)
 {
   CAMLparam1(page);
   CAMLlocal1(nativeint);
-  void *data = Caml_ba_data_val(page);
+  void *data = Bytes_val(page);
   nativeint = caml_copy_nativeint((intnat) data);
   CAMLreturn(nativeint);
 }

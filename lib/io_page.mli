@@ -22,7 +22,7 @@
 type buf = Cstruct.t
 (** Type of a C buffer (in this case, a Cstruct) *)
 
-type t = private (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+type t = private Bytes.t
 (** Type of memory blocks. *)
 
 val page_size : int
@@ -65,15 +65,10 @@ val length : t -> int
 val to_cstruct : t -> buf
 (** [to_cstruct t] generates a {!Cstruct.t} that covers the entire Io_page. *)
 
-exception Buffer_is_not_page_aligned
 exception Buffer_not_multiple_of_page_size
 
 val of_cstruct_exn : buf -> t
-(** [of_cstruct t] converts a page-aligned buffer back to an Io_page.
-  It raises {!Buffer_is_not_page_aligned} if [t] is not page aligned or
-  {!Buffer_not_multiple_of_page_size} if [t] is not a whole number
-  of pages in length.
-  TODO: currently assumes the underlying Bigarray is page aligned. *)
+(** [of_cstruct t] converts a buffer back to an Io_page. *)
 
 val to_string : t -> string
 (** [to_string t] will allocate a fresh {!string} and copy the contents of [t]

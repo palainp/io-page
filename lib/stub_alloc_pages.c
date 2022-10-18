@@ -35,41 +35,22 @@
 #include <caml/memory.h>
 #include <caml/alloc.h>
 #include <caml/fail.h>
-#include <caml/bigarray.h>
 
-/* Allocate a page-aligned bigarray of length [n_pages] pages.
-   Since CAML_BA_MANAGED is set the bigarray C finaliser will
-   call free() whenever all sub-bigarrays are unreachable.
- */
+CAMLextern void* caml_stat_alloc_aligned_noexc(asize_t, int modulo,
+                                               caml_stat_block*);
+
 CAMLprim value
 mirage_iopage_alloc_pages(value did_gc, value n_pages)
 {
   CAMLparam2(did_gc, n_pages);
-  size_t len = Int_val(n_pages) * PAGE_SIZE;
-  /* If the allocation fails, return None. The ocaml layer will
-     be able to trigger a full GC which just might run finalizers
-     of unused bigarrays which will free some memory. */
-#ifdef _WIN32
-  /* NB we can't use _aligned_malloc because we can't get OCaml to
-     finalize with _aligned_free. Regular free() will not work. */
-  static int printed_warning = 0;
-  if (!printed_warning) {
-    printed_warning = 1;
-    printf("WARNING: Io_page on Windows doesn't guarantee alignment\n");
-  }
-  void *block = malloc(len);
-  if (block == NULL) {
-#else
-  void* block = NULL;
-  int ret = posix_memalign(&block, PAGE_SIZE, len);
-  if (ret < 0) {
-#endif
-    if (Bool_val(did_gc))
-      printf("Io_page: memalign(%d, %zu) failed, even after GC.\n", PAGE_SIZE, len);
-    caml_raise_out_of_memory();
-  }
-  /* Explicitly zero the page before returning it */
-  memset(block, 0, len);
+  void *buf;
+  caml_stat_block block;
+  asize_t len = Int_val(n_pages) * PAGE_SIZE;
 
-  CAMLreturn(caml_ba_alloc_dims(CAML_BA_CHAR | CAML_BA_C_LAYOUT | CAML_BA_MANAGED, 1, block, len));
+  buf = caml_stat_alloc_aligned_noexc(Val_int(len), PAGE_SIZE, &block);
+
+  /* Explicitly zero the page before returning it */
+  memset(buf, 0 , len);
+  
+  CAMLreturn(buf);
 }
