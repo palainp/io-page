@@ -10,7 +10,6 @@ depends: [
   "conf-pkg-config" {build}
   "ocaml" {>= "4.08.0"}
   "dune" {>= "2.6"}
-  "cstruct" {>= "2.0.0"}
   "ounit" {with-test}
 ]
 build: [
@@ -28,7 +27,6 @@ depopts: [
 dev-repo: "git+https://github.com/mirage/io-page.git"
 synopsis: "Support for efficient handling of I/O memory pages"
 description: """
-IO pages are page-aligned, and wrapped in the `Cstruct` library to avoid
-copying the data contained within the page.
+IO pages are page-aligned, using big-arrays.
 """
 x-maintenance-intent: [ "(latest)" ]

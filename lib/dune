@@ -2,10 +2,9 @@
  (name io_page)
  (modules io_page)
  (public_name io-page)
- (libraries cstruct)
  (foreign_stubs
   (language c)
-  (names stub_alloc_pages stub_get_addr)
+  (names stub_alloc_pages stub_get_addr stub_bigstring)
   (flags :standard))
  (js_of_ocaml
   (javascript_files io-page.js)))

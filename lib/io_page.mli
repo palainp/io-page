@@ -17,12 +17,13 @@
 
 (** Memory allocation. *)
 
-(** Memory allocation interface. *)
+type buffer = (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t 
 
-type buf = Cstruct.t
-(** Type of a C buffer (in this case, a Cstruct) *)
-
-type t = private (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+type t = {
+  buffer: buffer;
+  off: int;
+  len: int;
+}
 (** Type of memory blocks. *)
 
 val page_size : int
@@ -35,19 +36,27 @@ val get_addr : t -> nativeint
 val get_page : t -> nativeint
 (** [get_page t] returns the page offset (get_addr t) mod page_size, starting at 0 .*)
 
-val get : int -> t
+val get : ?n:int -> unit -> t
 (** [get n] allocates and returns a memory block of [n] pages. If
     there is not enough memory, an [Out_of_memory] exception is
-    raised.  Note that this may be a recoverable situation, since
+    raised. Note that this may be a recoverable situation, since
     this function allocates memory from a page-aligned pool, whereas
     the OCaml garbage collector will be running in its own heap that
     may have spare memory despite the [Out_of_memory] being raised
     from this function call. *)
 
-val get_buf : ?n:int -> unit -> buf
-(** [get_buf n] allocates and returns a memory block of [n] pages,
-    represented as a {!Cstruct.t}. If there is not enough memory,
-    an [Out_of_memory] exception is raised. *)
+exception Buffer_is_not_page_aligned
+exception Buffer_not_multiple_of_page_size
+
+val unsafe_of_bigarray : ?off:int -> ?len:int -> buffer -> t
+val of_bigarray : ?off:int -> ?len:int -> buffer -> t
+
+val unsafe_sub: t -> int -> int -> t
+val sub: t -> int -> int -> t
+
+val to_pages : t -> t list
+(** [to_pages t] is a list of [size] memory blocks of one page each,
+    where [size] is the size of [t] in pages. *)
 
 val get_order : int -> t
 (** [get_order i] is [get (1 lsl i)]. *)
@@ -62,36 +71,45 @@ val pages_order : int -> t list
 val length : t -> int
 (** [length t] is the size of [t], in bytes. *)
 
-val to_cstruct : t -> buf
-(** [to_cstruct t] generates a {!Cstruct.t} that covers the entire Io_page. *)
-
-exception Buffer_is_not_page_aligned
-exception Buffer_not_multiple_of_page_size
-
-val of_cstruct_exn : buf -> t
-(** [of_cstruct t] converts a page-aligned buffer back to an Io_page.
-  It raises {!Buffer_is_not_page_aligned} if [t] is not page aligned or
-  {!Buffer_not_multiple_of_page_size} if [t] is not a whole number
-  of pages in length.
-  TODO: currently assumes the underlying Bigarray is page aligned. *)
-
 val to_string : t -> string
 (** [to_string t] will allocate a fresh {!string} and copy the contents of [t]
     into the string. *)
-
-val to_pages : t -> t list
-(** [to_pages t] is a list of [size] memory blocks of one page each,
-    where [size] is the size of [t] in pages. *)
 
 val string_blit : string -> int -> t -> int -> int -> unit
 (** [string_blit src srcoff dst dstoff len] copies [len] bytes from
     string [src], starting at byte number [srcoff], to memory block
     [dst], starting at byte number dstoff. *)
 
-val blit : t -> t -> unit
-(** [blit t1 t2] is the same as {!Bigarray.Array1.blit}. *)
+val blit_to_bytes : t -> int -> bytes -> int -> int -> unit
+
+val blit: t -> int -> t -> int -> int -> unit
+(** [blit src srcoff dst dstoff len] copies [len] characters from
+    cstruct [src], starting at index [srcoff], to cstruct [dst],
+    starting at index [dstoff]. It works correctly even if [src] and
+    [dst] are the same string, and the source and destination
+    intervals overlap.
+
+    @raise Invalid_argument if [srcoff] and [len] do not designate a
+    valid segment of [src], or if [dstoff] and [len] do not designate
+    a valid segment of [dst]. *)
 
 val round_to_page_size : int -> int
 (** [round_to_page_size n] returns the number of bytes that will be
     allocated for storing [n] bytes in memory *)
 
+val shift: t -> int -> t
+(** [shift cstr len] is [{ cstr with off=t.off+len; len=t.len-len }]
+    @raise Invalid_argument if the offset exceeds cstruct length. *)
+
+type uint8 = int
+type uint16 = int
+type uint32 = int32
+
+val set_uint8: t -> int -> uint8 -> unit
+val get_uint8: t -> int -> uint8
+val set_le_uint16: t -> int -> uint16 -> unit
+val get_le_uint16: t -> int -> uint16
+val set_le_uint32: t -> int -> uint32 -> unit
+val get_le_uint32: t -> int -> uint32
+
+(* val shift: t -> int -> t *)
