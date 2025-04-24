@@ -36,7 +36,7 @@ val get_addr : t -> nativeint
 val get_page : t -> nativeint
 (** [get_page t] returns the page offset (get_addr t) mod page_size, starting at 0 .*)
 
-val get : ?n:int -> unit -> t
+val get : int -> t
 (** [get n] allocates and returns a memory block of [n] pages. If
     there is not enough memory, an [Out_of_memory] exception is
     raised. Note that this may be a recoverable situation, since

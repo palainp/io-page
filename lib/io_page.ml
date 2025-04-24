@@ -50,15 +50,15 @@ let assert_alignement_and_size ba =
   if dim land (page_size - 1) <> 0 then raise Buffer_not_multiple_of_page_size;
   ()
 
-let get ?(n=1) () =
+let get n =
   if n < 0
   then raise (Invalid_argument "Io_page.get cannot allocate a -ve number of pages")
   else (
     try
-      {buffer=alloc_pages false n; off=0; len=page_size}
+      {buffer=alloc_pages false n; off=0; len=n*page_size}
     with Out_of_memory ->
     Gc.compact ();
-    {buffer=alloc_pages true n; off=0; len=page_size}
+    {buffer=alloc_pages true n; off=0; len=n*page_size}
   )
 
 let unsafe_of_bigarray ?(off=0) ?len ba =
@@ -130,11 +130,11 @@ let to_pages t =
   assert_alignement_and_size t.buffer ;
   unsafe_to_pages t
 
-let get_order order = get ~n:(1 lsl order) ()
+let get_order order = get (1 lsl order)
 
 let pages n =
   let rec inner acc n =
-    if n > 0 then inner ((get ~n:1 ())::acc) (n-1) else acc
+    if n > 0 then inner (get 1::acc) (n-1) else acc
   in inner [] n
 
 let pages_order order = pages (1 lsl order)
