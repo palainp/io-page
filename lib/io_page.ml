@@ -160,19 +160,24 @@ let blit src srcoff dst dstoff len =
     unsafe_blit_bigstring_to_bigstring src.buffer (src.off+srcoff) dst.buffer
       (dst.off+dstoff) len
 
-(* TODO: this is extremely inefficient.  Should use a ocp-endian
-   blit rather than a byte-by-byte *)
+external unsafe_blit_string_to_bigstring : string -> int -> buffer -> int -> int -> unit = "caml_blit_string_to_bigstring" [@@noalloc]
+external unsafe_blit_bigstring_to_bytes : buffer -> int -> Bytes.t -> int -> int -> unit = "caml_blit_bigstring_to_string" [@@noalloc]
+
 let string_blit src srcoff dst dstoff len =
-  (* TODO: check for buffer length or rename as unsafe? *)
-  for i = 0 to len - 1 do
-    dst.buffer.{i+dst.off+dstoff} <- src.[i+srcoff]
-  done
+  if len < 0 || srcoff < 0 || dstoff < 0 || String.length src - srcoff < len then
+    invalid_arg "blit with source indexes"
+  else if dst.len - dstoff < len then
+    invalid_arg "blit with dest indexes"
+  else
+    unsafe_blit_string_to_bigstring src srcoff dst.buffer (dst.off+dstoff) len
 
 let blit_to_bytes src srcoff dst dstoff len =
-  (* TODO: check for bytes length or rename as unsafe? *)
-  for i = 0 to len - 1 do
-    Bytes.set dst (i+dstoff) src.buffer.{i+src.off+srcoff}
-  done
+  if len < 0 || srcoff < 0 || src.len - srcoff < len then
+    invalid_arg "blit with source indexes"
+  else if (Bytes.length dst) - dstoff < len then
+    invalid_arg "blit with dest indexes"
+  else
+    unsafe_blit_bigstring_to_bytes src.buffer (src.off+srcoff) dst 0 len
 
 let check_bounds t len =
   len >= 0 && Bigarray.Array1.dim t.buffer >= len
@@ -205,12 +210,12 @@ let swap = Sys.big_endian
 
 let set_le_uint16 t i c =
   if i > (length t) - 2 || i < 0 then invalid_arg "set_le_uint16 invalid bound"
-  else ba_set_int16 t.buffer i (if swap then swap16 c else c) [@@inline]
+  else ba_set_int16 t.buffer (t.off+i) (if swap then swap16 c else c) [@@inline]
 
 let get_le_uint16 t i =
   if i > (length t) - 2 || i < 0 then invalid_arg "get_le_uint16 invalid bound"
   else
-    let r = ba_get_int16 t.buffer i in
+    let r = ba_get_int16 t.buffer (t.off+i) in
     if swap then swap16 r else r [@@inline]
 
 external ba_set_int32 : buffer -> int -> uint32 -> unit = "%caml_bigstring_set32u"
@@ -219,10 +224,10 @@ external swap32 : int32 -> int32 = "%bswap_int32"
 
 let set_le_uint32 t i c =
   if i > (length t) - 4 || i < 0 then invalid_arg "set_le_uint32 invalid bound"
-  else ba_set_int32 t.buffer i (if swap then swap32 c else c) [@@inline]
+  else ba_set_int32 t.buffer (t.off+i) (if swap then swap32 c else c) [@@inline]
 
 let get_le_uint32 t i =
   if i > (length t) - 4 || i < 0 then invalid_arg "get_le_uint32 invalid bound"
   else
-    let r = ba_get_int32 t.buffer i in
+    let r = ba_get_int32 t.buffer (t.off+i) in
     if swap then swap32 r else r [@@inline]
