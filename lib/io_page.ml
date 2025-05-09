@@ -151,8 +151,8 @@ let blit src srcoff dst dstoff len =
     unsafe_blit_bigstring_to_bigstring src.buffer (src.off+srcoff) dst.buffer
       (dst.off+dstoff) len
 
-external unsafe_blit_string_to_bigstring : string -> int -> buffer -> int -> int -> unit = "caml_blit_string_to_bigstring" [@@noalloc]
-external unsafe_blit_bigstring_to_bytes : buffer -> int -> Bytes.t -> int -> int -> unit = "caml_blit_bigstring_to_string" [@@noalloc]
+external unsafe_blit_string_to_bigstring : string -> int -> buffer -> int -> int -> unit = "mirage_iopage_blit_string_to_bigstring" [@@noalloc]
+external unsafe_blit_bigstring_to_bytes : buffer -> int -> Bytes.t -> int -> int -> unit = "mirage_iopage_blit_bigstring_to_string" [@@noalloc]
 
 let string_blit src srcoff dst dstoff len =
   if len < 0 || srcoff < 0 || dstoff < 0 || String.length src - srcoff < len then

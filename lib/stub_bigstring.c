@@ -36,6 +36,25 @@ mirage_iopage_blit_bigstring_to_bigstring(value val_buf1, value val_ofs1, value 
   return Val_unit;
 }
 
+
+CAMLprim value
+mirage_iopage_blit_bigstring_to_string(value val_buf1, value val_ofs1, value val_buf2, value val_ofs2, value val_len)
+{
+  memcpy(Bytes_val(val_buf2) + Long_val(val_ofs2),
+         (char*)Caml_ba_data_val(val_buf1) + Long_val(val_ofs1),
+         Long_val(val_len));
+  return Val_unit;
+}
+
+CAMLprim value
+mirage_iopage_blit_string_to_bigstring(value val_buf1, value val_ofs1, value val_buf2, value val_ofs2, value val_len)
+{
+  memcpy((char*)Caml_ba_data_val(val_buf2) + Long_val(val_ofs2),
+         String_val(val_buf1) + Long_val(val_ofs1),
+         Long_val(val_len));
+  return Val_unit;
+}
+
 CAMLprim value
 mirage_iopage_fill_bigstring(value val_buf, value val_ofs, value val_len, value val_byte)
 {
