@@ -141,16 +141,7 @@ let pages_order order = pages (1 lsl order)
 
 let round_to_page_size n = ((n + page_size - 1) lsr 12) lsl 12
 
-let to_string t =
-  let len = length t in
-  let result = Bytes.create len in
-  for i = 0 to len - 1 do
-    Bytes.set result i t.buffer.{i}
-  done;
-  Bytes.unsafe_to_string result
-
 external unsafe_blit_bigstring_to_bigstring : buffer -> int -> buffer -> int -> int -> unit = "mirage_iopage_blit_bigstring_to_bigstring" [@@noalloc]
-
 let blit src srcoff dst dstoff len =
   if len < 0 || srcoff < 0 || src.len - srcoff < len then
     invalid_arg "blit with source indexes"
@@ -178,6 +169,12 @@ let blit_to_bytes src srcoff dst dstoff len =
     invalid_arg "blit with dest indexes"
   else
     unsafe_blit_bigstring_to_bytes src.buffer (src.off+srcoff) dst 0 len
+
+let to_string t =
+  let len = length t in
+  let dst = Bytes.create len in
+  unsafe_blit_bigstring_to_bytes t.buffer t.off dst 0 len ;
+  Bytes.unsafe_to_string dst
 
 let check_bounds t len =
   len >= 0 && Bigarray.Array1.dim t.buffer >= len
