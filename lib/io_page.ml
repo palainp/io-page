@@ -168,7 +168,7 @@ let blit_to_bytes src srcoff dst dstoff len =
   else if (Bytes.length dst) - dstoff < len then
     invalid_arg "blit with dest indexes"
   else
-    unsafe_blit_bigstring_to_bytes src.buffer (src.off+srcoff) dst 0 len
+    unsafe_blit_bigstring_to_bytes src.buffer (src.off+srcoff) dst dstoff len
 
 let to_string t =
   let len = length t in
