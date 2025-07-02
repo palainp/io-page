@@ -104,6 +104,7 @@ val shift: t -> int -> t
 type uint8 = int
 type uint16 = int
 type uint32 = int32
+type uint64 = int64
 
 val set_uint8: t -> int -> uint8 -> unit
 val get_uint8: t -> int -> uint8
@@ -111,5 +112,7 @@ val set_le_uint16: t -> int -> uint16 -> unit
 val get_le_uint16: t -> int -> uint16
 val set_le_uint32: t -> int -> uint32 -> unit
 val get_le_uint32: t -> int -> uint32
+val set_le_uint64: t -> int -> uint64 -> unit
+val get_le_uint64: t -> int -> uint64
 
 (* val shift: t -> int -> t *)

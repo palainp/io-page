@@ -190,6 +190,7 @@ let shift t amount =
 type uint8 = int
 type uint16 = int
 type uint32 = int32
+type uint64 = int64
 
 let set_uint8 t i c =
   if i >= (length t) || i < 0 then invalid_arg "set_uint8 invalid bound"
@@ -228,3 +229,17 @@ let get_le_uint32 t i =
   else
     let r = ba_get_int32 t.buffer (t.off+i) in
     if swap then swap32 r else r [@@inline]
+
+external ba_set_int64 : buffer -> int -> uint64 -> unit = "%caml_bigstring_set64u"
+external ba_get_int64 : buffer -> int -> uint64 = "%caml_bigstring_get64u"
+external swap64 : int64 -> int64 = "%bswap_int64"
+
+let set_le_uint64 t i c =
+  if i > t.len - 8 || i < 0 then invalid_arg "set_le_uint64 invalid bound"
+  else ba_set_int64 t.buffer (t.off+i) (if swap then swap64 c else c) [@@inline]
+
+let get_le_uint64 t i =
+  if i > t.len - 8 || i < 0 then invalid_arg "get_le_uint64 invalid bound"
+  else
+    let r = ba_get_int64 t.buffer (t.off+i) in
+    if swap then swap64 r else r [@@inline]
